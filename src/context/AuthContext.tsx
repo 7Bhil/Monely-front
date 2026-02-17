@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setLoading(true);
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || '/api/'}auth/profile/`);
+        const response = await axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/auth/profile/`);
         setUser(response.data);
       } catch (error) {
         console.error('Failed to fetch profile', error);
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL || '/api/'}auth/profile/`);
+      const response = await axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/auth/profile/`);
       setUser(response.data);
     } catch (error) {
       console.error('Initial profile fetch failed', error);

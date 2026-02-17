@@ -29,7 +29,7 @@ export default function OnboardingPage() {
   const handleStep1 = async () => {
     setLoading(true);
     try {
-      await axios.patch(`${import.meta.env.VITE_API_URL || '/api/'}auth/profile/update/`, {
+      await axios.patch(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/auth/profile/update/`, {
         monthly_income: parseFloat(income),
         income_frequency: frequency,
         currency: currency
@@ -64,7 +64,7 @@ export default function OnboardingPage() {
       const validExpenses = expenses.filter(e => e.name && e.amount);
       
       for (const expense of validExpenses) {
-          await axios.post(`${import.meta.env.VITE_API_URL || '/api/'}wallets/fixed-expenses/`, {
+          await axios.post(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/wallets/fixed-expenses/`, {
               name: expense.name,
               amount: parseFloat(expense.amount),
               periodicity: expense.periodicity,

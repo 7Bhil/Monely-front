@@ -26,7 +26,7 @@ export default function AuthPage() {
     setError('');
     setLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL || '/api/'}auth/login/`, {
+      const response = await axios.post(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/auth/login/`, {
         email,
         password
       });
@@ -52,7 +52,7 @@ export default function AuthPage() {
     
     try {
       // 1. Register
-      await axios.post(`${import.meta.env.VITE_API_URL || '/api/'}auth/register/`, {
+      await axios.post(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/auth/register/`, {
         email,
         name,
         username: email.split('@')[0], // Generate username from email
@@ -61,7 +61,7 @@ export default function AuthPage() {
       });
       
       // 2. Auto Login after register
-      const loginResponse = await axios.post(`${import.meta.env.VITE_API_URL || '/api/'}auth/login/`, {
+      const loginResponse = await axios.post(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/auth/login/`, {
         email,
         password
       });
