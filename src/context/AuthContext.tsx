@@ -26,12 +26,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_BASE = () => (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
+// Safety: always resolve loading after this many ms, even if the request hangs
+const MAX_LOADING_MS = 8000;
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('access_token'));
   const [loading, setLoading] = useState(true);
-  // Ref to prevent double-fetch when login() sets token AND the useEffect fires
+  // Prevent double-fetch when login() sets token AND the useEffect fires
   const isFetchingRef = useRef(false);
+  // Safety timer ref
+  const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSafetyTimer = () => {
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
+    }
+  };
+
+  const startSafetyTimer = () => {
+    clearSafetyTimer();
+    safetyTimerRef.current = setTimeout(() => {
+      // If still loading after MAX_LOADING_MS, force-stop
+      setLoading(false);
+      isFetchingRef.current = false;
+    }, MAX_LOADING_MS);
+  };
 
   // Configure axios defaults whenever token changes
   useEffect(() => {
@@ -44,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token]);
 
-  // Fetch profile on mount (if token exists in localStorage)
+  // Fetch profile on mount / token change
   useEffect(() => {
     const fetchProfile = async () => {
       if (!token) {
@@ -54,15 +75,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Skip if login() is already fetching the profile
       if (isFetchingRef.current) return;
 
+      isFetchingRef.current = true;
       setLoading(true);
+      startSafetyTimer();
+
       try {
-        const response = await axios.get(`${API_BASE()}/auth/profile/`);
+        const response = await axios.get(`${API_BASE()}/auth/profile/`, {
+          timeout: 7000, // 7s hard timeout on the request itself
+        });
         setUser(response.data);
       } catch (error) {
         console.error('Failed to fetch profile', error);
-        logout();
+        // Token is invalid or server unreachable → logout cleanly
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        delete axios.defaults.headers.common['Authorization'];
       } finally {
+        clearSafetyTimer();
         setLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
@@ -73,27 +106,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (accessToken: string, refreshToken: string) => {
     isFetchingRef.current = true;
     setLoading(true);
+    startSafetyTimer();
 
-    // Set token and storage
     setToken(accessToken);
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
-
-    // Configure axios immediately
     axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
     try {
-      const response = await axios.get(`${API_BASE()}/auth/profile/`);
+      const response = await axios.get(`${API_BASE()}/auth/profile/`, {
+        timeout: 7000,
+      });
       setUser(response.data);
     } catch (error) {
       console.error('Initial profile fetch failed', error);
     } finally {
+      clearSafetyTimer();
       setLoading(false);
       isFetchingRef.current = false;
     }
   };
 
   const logout = () => {
+    clearSafetyTimer();
     setUser(null);
     setToken(null);
     localStorage.removeItem('access_token');
