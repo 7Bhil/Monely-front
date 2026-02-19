@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { useData } from '../context/useData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/ui/icons';
@@ -10,16 +11,10 @@ import { Sparkles, ArrowRight, PlusCircle, Bell, X } from 'lucide-react';
 import { AddWalletModal } from '@/components/modals/AddWalletModal';
 import { AddTransactionModal } from '@/components/modals/AddTransactionModal';
 
-// Chart placeholders - real logic inside component
-
-// Real calculations will happen inside the component
-
 export default function Dashboard() {
   const { user } = useAuth();
+  const { wallets, transactions, loading, refreshData } = useData();
   const navigate = useNavigate();
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showAddWallet, setShowAddWallet] = useState(false);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [salaryConfirming, setSalaryConfirming] = useState(false);
@@ -28,26 +23,6 @@ export default function Dashboard() {
   const isTenthDay = new Date().getDate() === 10;
   // For demo/debug purposes, you can uncomment the line below:
   // const isTenthDay = true; 
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [walletsRes, transactionsRes] = await Promise.all([
-        axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/wallets/wallets/`),
-        axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/transactions/transactions/`)
-      ]);
-      setWallets(walletsRes.data.results || walletsRes.data);
-      setTransactions(transactionsRes.data.results || transactionsRes.data);
-    } catch (error) {
-      console.error("Failed to fetch dashboard data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const totalBalance = wallets.reduce((sum, wallet) => sum + Number(wallet.balance), 0);
   const monthlyIncome = user?.monthly_income || 0;
@@ -67,12 +42,12 @@ export default function Dashboard() {
   // Real chart data aggregation
   const categoryMap = transactions
     .filter(t => t.type === 'expense')
-    .reduce((acc: any, t) => {
+    .reduce((acc: Record<string, number>, t) => {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
     }, {});
 
-  const categoryData = Object.entries(categoryMap).map(([name, value]: [string, any], i) => ({
+  const categoryData = Object.entries(categoryMap).map(([name, value], i) => ({
     name,
     value: Math.round((value / monthlyExpenses) * 100) || 0,
     color: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'][i % 5]
@@ -120,7 +95,7 @@ export default function Dashboard() {
         status: 'completed'
       });
       setHideSalaryBanner(true);
-      fetchData();
+      refreshData();
     } catch (error) {
       console.error("Failed to confirm salary", error);
     } finally {
@@ -359,7 +334,7 @@ export default function Dashboard() {
        <Card className="shadow-sm">
            <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base font-semibold">Transactions Récentes</CardTitle>
-                <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" onClick={() => window.location.href = '/transactions'}>
+                <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" onClick={() => navigate('/transactions')}>
                     Voir tout <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
             </CardHeader>
@@ -394,12 +369,12 @@ export default function Dashboard() {
       <AddWalletModal 
         open={showAddWallet} 
         onOpenChange={setShowAddWallet} 
-        onSuccess={fetchData} 
+        onSuccess={refreshData} 
       />
       <AddTransactionModal 
         open={showAddTransaction} 
         onOpenChange={setShowAddTransaction} 
-        onSuccess={fetchData} 
+        onSuccess={refreshData} 
       />
     </div>
   );

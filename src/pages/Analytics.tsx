@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
+import { useAuth } from '../context/useAuth';
+import { useData } from '../context/useData';
 import { TrendChart, IncomeExpensesChart, CategoryPieChart } from '../components/ui/Charts';
 import StatCard from '../components/ui/StatCard';
 import { 
@@ -16,29 +16,7 @@ import {
 
 const Analytics: React.FC = () => {
   const { user } = useAuth();
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [walletsRes, transactionsRes] = await Promise.all([
-        axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/wallets/wallets/`),
-        axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/transactions/transactions/`)
-      ]);
-      setWallets(walletsRes.data.results || walletsRes.data);
-      setTransactions(transactionsRes.data.results || transactionsRes.data);
-    } catch (error) {
-      console.error("Failed to fetch analytics data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { wallets, transactions, loading } = useData();
 
   const totalBalance = wallets.reduce((sum, wallet) => sum + Number(wallet.balance), 0);
   
@@ -68,12 +46,12 @@ const Analytics: React.FC = () => {
   // Pie Chart Data
   const categoryMap = transactions
     .filter(t => t.type === 'expense')
-    .reduce((acc: any, t) => {
+    .reduce((acc: Record<string, number>, t) => {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
     }, {});
 
-  const pieData = Object.entries(categoryMap).map(([name, value]: [string, any], i) => ({
+  const pieData = Object.entries(categoryMap).map(([name, value], i) => ({
     name,
     value: Math.round((value / mExpenses) * 100) || 0,
     color: ['#1919e6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'][i % 5]

@@ -1,40 +1,14 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/ui/icons';
+import { Plus } from 'lucide-react';
 import { AddTransactionModal } from '@/components/modals/AddTransactionModal';
-
-interface Transaction {
-  id: number;
-  name: string;
-  amount: number;
-  type: string;
-  category: string;
-  date: string;
-  status: string;
-}
+import { useData } from '../context/useData';
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { transactions, loading, refreshData } = useData();
   const [showAddModal, setShowAddModal] = useState(false);
-
-  const fetchTransactions = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/transactions/`);
-      setTransactions(response.data.results || response.data);
-    } catch (error) {
-      console.error("Failed to fetch transactions", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
 
   if (loading) {
     return <div className="p-8 flex justify-center"><Icons.spinner className="animate-spin h-8 w-8" /></div>;
@@ -45,7 +19,7 @@ export default function TransactionsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
         <Button onClick={() => setShowAddModal(true)}>
-          <Icons.plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouvelle Transaction
         </Button>
       </div>
@@ -91,7 +65,7 @@ export default function TransactionsPage() {
       <AddTransactionModal 
         open={showAddModal} 
         onOpenChange={setShowAddModal} 
-        onSuccess={fetchTransactions} 
+        onSuccess={refreshData} 
       />
     </div>
   );

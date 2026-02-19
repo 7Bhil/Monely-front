@@ -13,13 +13,18 @@ interface AddTransactionModalProps {
   onSuccess: () => void;
 }
 
+interface Wallet {
+  id: number;
+  name: string;
+}
+
 export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransactionModalProps) {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('expense');
   const [category, setCategory] = useState('Autre');
   const [walletId, setWalletId] = useState<string>('');
-  const [wallets, setWallets] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,9 +63,13 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
       });
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create transaction", error);
-      setError(error.response?.data?.detail || "Erreur lors de l'ajout de la transaction");
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.detail || "Erreur lors de l'ajout de la transaction");
+      } else {
+        setError("Erreur lors de l'ajout de la transaction");
+      }
     } finally {
       setLoading(false);
     }

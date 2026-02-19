@@ -1,28 +1,7 @@
-import { useState, createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import axios from 'axios';
 
-interface User {
-  id: number;
-  email: string;
-  name: string;
-  username: string;
-  avatar_url?: string;
-  currency: string;
-  language: string;
-  monthly_income?: number;
-  income_frequency?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  login: (token: string, refreshToken: string) => Promise<void>;
-  logout: () => void;
-  updateUser: (data: Partial<User>) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, type User } from './AuthContextCore';
 
 const API_BASE = () => (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
@@ -149,10 +128,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// useAuth hook moved to useAuth.ts

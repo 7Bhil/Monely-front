@@ -5,10 +5,12 @@ import {
   Wallet, 
   ArrowUpRight, 
   Settings, 
-  PieChart 
+  PieChart,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/useAuth';
 
 const Sidebar = () => {
   const { user } = useAuth();
@@ -26,6 +28,8 @@ const Sidebar = () => {
         <NavItem to="/" icon={LayoutDashboard} label="Tableau de Bord" />
         <NavItem to="/wallets" icon={Wallet} label="Portefeuilles" />
         <NavItem to="/transactions" icon={ArrowUpRight} label="Transactions" />
+        <NavItem to="/income" icon={TrendingUp} label="Revenus" />
+        <NavItem to="/expenses" icon={TrendingDown} label="Dépenses" />
         <NavItem to="/analytics" icon={PieChart} label="Analytiques" />
         <NavItem to="/settings" icon={Settings} label="Paramètres" />
       </nav>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,10 +35,16 @@ export function AddWalletModal({ open, onOpenChange, onSuccess }: AddWalletModal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
+      const parsedBalance = parseFloat(balance);
+      if (isNaN(parsedBalance)) {
+        throw new Error("Le solde doit être un nombre valide");
+      }
+
       await axios.post(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/wallets/wallets/`, {
         name,
-        balance: parseFloat(balance),
+        balance: parsedBalance,
         type,
         currency: user?.currency || 'XOF',
         color,
@@ -46,9 +52,23 @@ export function AddWalletModal({ open, onOpenChange, onSuccess }: AddWalletModal
       });
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create wallet", error);
-      setError(error.response?.data?.detail || "Erreur lors de la création du portefeuille");
+      if (axios.isAxiosError(error) && error.response?.data) {
+        // Handle DRF validation errors
+        const backendErrors = error.response.data;
+        if (typeof backendErrors === 'object') {
+          const firstError = Object.values(backendErrors)[0];
+          setError(Array.isArray(firstError) ? firstError[0] : String(firstError));
+        } else {
+          const detail = (error.response.data as { detail?: string }).detail;
+          setError(detail || "Erreur lors de la création du portefeuille");
+        }
+      } else if (error instanceof Error) {
+        setError(error.message || "Erreur lors de la création du portefeuille");
+      } else {
+        setError("Erreur lors de la création du portefeuille");
+      }
     } finally {
       setLoading(false);
     }

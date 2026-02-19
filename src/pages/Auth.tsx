@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +32,12 @@ export default function AuthPage() {
       });
       await login(response.data.access, response.data.refresh);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Une erreur est survenue lors de la connexion.');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Une erreur est survenue lors de la connexion.');
+      } else {
+        setError('Une erreur est survenue lors de la connexion.');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,10 +73,10 @@ export default function AuthPage() {
       
       // 3. Redirect to Onboarding
       navigate('/onboarding');
-    } catch (err: any) {
+    } catch (err: unknown) {
        // Display specific validation errors if available
-       if (err.response?.data) {
-           const messages = Object.values(err.response.data).flat().join(' ');
+       if (axios.isAxiosError(err) && err.response?.data) {
+           const messages = Object.values(err.response.data as Record<string, string | string[]>).flat().join(' ');
            setError(messages || 'Une erreur est survenue lors de l inscription.');
        } else {
            setError('Une erreur est survenue lors de l inscription.');

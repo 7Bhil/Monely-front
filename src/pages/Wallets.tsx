@@ -1,39 +1,20 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/ui/icons';
+import { Plus } from 'lucide-react';
 import { AddWalletModal } from '@/components/modals/AddWalletModal';
-
-interface Wallet {
-  id: number;
-  name: string;
-  balance: number;
-  currency: string;
-  type: string;
-  color: string;
-}
+import { useData } from '../context/useData';
 
 export default function WalletsPage() {
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { wallets, loading, refreshData } = useData();
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const fetchWallets = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/wallets/`);
-      setWallets(response.data.results || response.data);
-    } catch (error) {
-      console.error("Failed to fetch wallets", error);
-    } finally {
-      setLoading(false);
-    }
+  const colorMap: Record<string, string> = {
+    blue: '#3b82f6', green: '#10b981', red: '#ef4444',
+    yellow: '#f59e0b', purple: '#8b5cf6', pink: '#ec4899',
+    indigo: '#6366f1', orange: '#f97316', teal: '#14b8a6',
   };
-
-  useEffect(() => {
-    fetchWallets();
-  }, []);
 
   if (loading) {
     return <div className="p-8 flex justify-center"><Icons.spinner className="animate-spin h-8 w-8" /></div>;
@@ -44,7 +25,7 @@ export default function WalletsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Mes Portefeuilles</h2>
         <Button onClick={() => setShowAddModal(true)}>
-          <Icons.plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4" />
           Nouveau Portefeuille
         </Button>
       </div>
@@ -52,7 +33,7 @@ export default function WalletsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {wallets.map((wallet) => (
           <Card key={wallet.id} className="relative overflow-hidden">
-            <div className={`absolute top-0 left-0 w-1 h-full bg-${wallet.color || 'blue'}-500`} />
+            <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: colorMap[wallet.color] || colorMap.blue }} />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {wallet.name}
@@ -74,7 +55,7 @@ export default function WalletsPage() {
       <AddWalletModal 
         open={showAddModal} 
         onOpenChange={setShowAddModal} 
-        onSuccess={fetchWallets} 
+        onSuccess={refreshData} 
       />
     </div>
   );
