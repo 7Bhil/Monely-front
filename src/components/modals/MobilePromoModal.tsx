@@ -36,7 +36,7 @@ export function MobilePromoModal({ open, onOpenChange }: MobilePromoModalProps) 
           <div className="flex flex-col gap-3 w-full">
             <Button 
                 className="w-full h-12 text-md font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all transform hover:scale-[1.02]" 
-                onClick={() => window.open('/release/monely-v1.apk', '_blank')}
+                onClick={() => window.open('/release/monely-offline.apk', '_blank')}
             >
               <Icons.play className="mr-2 h-5 w-5" />
               Télécharger pour Android
